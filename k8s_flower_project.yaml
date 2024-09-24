@@ -1,0 +1,207 @@
+# Namespace Definition
+apiVersion: v1 
+kind: Namespace
+metadata:
+  name: flower-shop
+---
+# Frontend Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-deployment
+  namespace: flower-shop
+  labels:
+    app: frontend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+      - name: frontend
+        image: nginx:latest
+        ports:
+        - containerPort: 80
+---
+# Backend Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-deployment
+  namespace: flower-shop
+  labels:
+    app: backend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+      - name: backend
+        image: tiangolo/uwsgi-nginx-flask:python3.8
+        env:
+        - name: FLASK_APP
+          value: "app.py"
+        ports:
+        - containerPort: 80
+---
+# Frontend Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-service
+  namespace: flower-shop
+  labels:
+    app: frontend
+spec:
+  selector:
+    app: frontend
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80
+  type: ClusterIP
+---
+# Backend Service with Load Balancer
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-service
+  namespace: flower-shop
+  labels:
+    app: backend
+spec:
+  selector:
+    app: backend
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80
+  type: LoadBalancer
+---
+# Ingress Definition
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: flower-shop-ingress
+  namespace: flower-shop
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+  - host: flower-shop.example.com
+    http:
+      paths:
+      - path: /frontend
+        pathType: Prefix
+        backend:
+          service:
+            name: frontend-service
+            port:
+              number: 80
+      - path: /backend
+        pathType: Prefix
+        backend:
+          service:
+            name: backend-service
+            port:
+              number: 80
+  tls:
+  - hosts:
+    - flower-shop.example.com
+    secretName: tls-secret
+---
+# PersistentVolume for Backend Database
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-backend-db
+  namespace: flower-shop
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: manual
+  hostPath:
+    path: "/mnt/data"
+---
+# PersistentVolumeClaim for Backend Database
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc-backend-db
+  namespace: flower-shop
+spec:
+  selector:
+    matchLabels:
+      app: my-app
+  template:
+    metadata:
+      labels:
+        app: my-app
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: manual
+  resources:
+    requests:
+      storage: 10Gi
+---
+# Backend Database Deployment with Persistent Volume
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-db-deployment
+  namespace: flower-shop
+  labels:
+    app: backend-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app:backend-db
+  template:
+    metadata:
+      labels:
+        app: backend-db
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:latest
+        ports:
+        - containerPort: 5432
+        volumeMounts:
+        - name: db-storage
+          mountPath: /var/lib/postgresql/data
+      volumes:
+      - name: db-storage
+        persistentVolumeClaim:
+          claimName: pvc-backend-db
+---
+# Backend Database Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-db-service
+  namespace: flower-shop
+  labels:
+    app: backend-db
+spec:
+  selector:
+    app: backend-db
+  ports:
+  - protocol: TCP
+    port: 5432
+    targetPort: 5432
+  type: ClusterIP
