@@ -1,0 +1,51 @@
+stages:
+  - build
+  - test
+  - deploy
+
+# Переменные окружения
+variables:
+  APP_NAME: "flower_shop_app"
+  NODE_ENV: "production"
+  DOCKER_IMAGE: "my-docker-registry.com/${CI_PROJECT_NAME}:${CI_COMMIT_REF_SLUG}"
+
+# Этап сборки
+build-job:
+  stage: build
+  image: node:18
+  script:
+    - echo "Installing dependencies..."
+    - npm install
+    - echo "Building the app..."
+    - npm run build
+  artifacts:
+    paths:
+      - dist/   # Сохраняем результат сборки
+
+# Этап тестирования
+test-job:
+  stage: test
+  image: node:18
+  script:
+    - echo "Running tests..."
+    - npm install
+    - npm run test
+  allow_failure: false
+
+# Этап деплоя на staging
+deploy-job:
+  stage: deploy
+  image: docker:24
+  services:
+    - docker:dind
+  before_script:
+    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin $CI_REGISTRY
+  script:
+    - echo "Building Docker image..."
+    - docker build -t $DOCKER_IMAGE .
+    - echo "Pushing Docker image to registry..."
+    - docker push $DOCKER_IMAGE
+    - echo "Deploying to staging..."
+    - docker run -d -p 8080:8080 $DOCKER_IMAGE
+  only:
+    - develop  # Деплой только из ветки develop
