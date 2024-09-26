@@ -1,0 +1,9 @@
+/nginx_test-portfolio
+├── docker-compose.yml
+├── nginx
+│   ├── Dockerfile
+│   └── nginx.conf
+└── static
+    ├── index.html
+    ├── style.css
+    └── app.js
