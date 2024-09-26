@@ -1,0 +1,7 @@
+Project: Ansible Role-Based Nginx Setup
+Objective: Use Ansible roles to install and configure Nginx on multiple remote servers.
+
+Use of Ansible roles to create reusable components for deploying Nginx.
+Automation of Nginx installation and configuration across multiple servers.
+Usage of templates for dynamic configuration (Nginx config).
+Role-based organization for scalability and maintainability in configuration management.
