@@ -1,0 +1,15 @@
+/ansible-nginx
+├── ansible.cfg
+├── inventory
+│   └── hosts
+├── playbook.yml
+└── roles
+    └── nginx
+        ├── tasks
+        │   └── main.yml
+        ├── handlers
+        │   └── main.yml
+        ├── templates
+        │   └── nginx.conf.j2
+        ├── defaults
+        │   └── main.yml
