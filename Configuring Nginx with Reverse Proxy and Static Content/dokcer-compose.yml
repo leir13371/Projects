@@ -1,0 +1,15 @@
+version: '3'
+services:
+  nginx:
+    build:
+      context: ./nginx
+    ports:
+      - "8080:80"
+  backend:
+    image: node:14  #  Node.js backend
+    working_dir: /app
+    volumes:
+      - ./backend:/app
+    command: node server.js
+    ports:
+      - "3000:3000"

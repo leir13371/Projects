@@ -1,0 +1,6 @@
+Hi, this is my little project that I did in the summer
+Project: Configuring Nginx with reverse proxy and static content
+Goal: Configure Nginx as a web server to serve static content and configuration to work as a reverse proxy for the backend.
+Description: Nginx will serve static files (HTML, CSS, JS) and proxy requests to the backend (for example, to port 3000, where my application is running).
+
+
